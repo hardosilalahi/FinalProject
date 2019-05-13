@@ -102,30 +102,32 @@ Adafruit_SSD1306 display(3);    //Display Initiation. Don't change!
  * Any changes will seriously change the behaviour of the Network.
  * Modify carefully!
  * 
- * NodeMCU ESP8266 IP Address for #KUCUY      --> 192.168.0.103
- * NodeMCU ESP8266 IP Address for HES STUDIO  --> 192.168.0.37
- * NodeMCU ESP8266 IP Address for BlueFrost X --> 192.168.43.180
+ * NodeMCU ESP8266 IP Address for HES STUDIO  --> 192.168.0.36
+ * NodeMCU ESP8266 IP Address for testarduino --> 192.168.43.170
+ * NodeMCU ESP8266 IP Address for testarduino --> 192.168.0.4
  * 
  */
 
-  //Home Wifi
-  const char* ssid = "#KUCUY";
-  const char* password = "simanjuntak98";
-  const char* mqtt_server = "192.168.0.102";
+      //Wifi HP
+    const char* ssid = "testarduino";    // Enter SSID here
+    const char* password = "hardo123";    // Enter Password here
+    const char* server = "192.168.43.170";
 
-  //Laboratory Wifi
+//  //Laboratory Wifi
 //  const char* ssid = "HES STUDIO";
 //  const char* password = "akugaktausihkoktanyaaku";
-//  const char* mqtt_server = "192.168.0.19";
+//  const char* server = "192.168.0.36";
 
-  //Phone Hotspot
-//  const char* ssid = "BlueFrost X";
-//  const char* password = "starlink49X";
-//  const char* mqtt_server = "192.168.43.12";
+//      // Wifi Kontrakan
+//    const char* ssid = "The last kontrakan";    // Enter SSID here
+//    const char* password = "bayar10000aja";    // Enter Password here
+//    const char* server = "192.168.0.4";
+
 
   //ESP8266 Wifi Initiation
-  WiFiClient espClient;
-  PubSubClient client(espClient);
+  WiFiClient client;
+//  PubSubClient client(espClient);
+  HTTPClient http;
   
 /* IMPORTANT -------------> MENU SYSTEM
  *  
@@ -193,7 +195,7 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
-void callback_pingpong(String topic, byte* message, unsigned int length) {
+/* void callback_pingpong(String topic, byte* message, unsigned int length) {
   String messageTemp;
   Serial.print("Message arrived on topic: ");
   Serial.print(topic);
@@ -214,8 +216,9 @@ void callback_pingpong(String topic, byte* message, unsigned int length) {
   if(topic=="pingpong/ball_coorY/in")   {ball_coorY = messageTemp.toInt();}
   Serial.println();
 }
+*/
 
-void callback_tictactoe(String topic, byte* message, unsigned int length) {
+/* void callback_tictactoe(String topic, byte* message, unsigned int length) {
   String messageTemp;
   Serial.print("Message arrived on topic: ");
   Serial.print(topic);
@@ -234,8 +237,9 @@ void callback_tictactoe(String topic, byte* message, unsigned int length) {
   if(topic=="tictactoe/X_column/in")  {X_column = messageTemp.toInt();}
   Serial.println();
 }
+*/
 
-void reconnect_pingpong() {
+/* void reconnect_pingpong() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect("ESP8266_1")) {
@@ -257,8 +261,9 @@ void reconnect_pingpong() {
     }
   }
 }
+*/
 
-void reconnect_tictactoe() {
+/* void reconnect_tictactoe() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect("ESP8266_1")) {
@@ -278,6 +283,7 @@ void reconnect_tictactoe() {
     }
   }
 }
+*/
 
 /* IMPORTANT -------------> SYSTEM CORE FUNCTION
  *  
@@ -428,8 +434,9 @@ void displayMenu_Cover()  {
         if (enter == LOW) {
           game_id = 2;       
           setup_wifi();
-          client.setServer(mqtt_server, 1883);
-          client.setCallback(callback_pingpong);
+          client.connect(server, 80);
+//          client.setServer(mqtt_server, 1883);
+//          client.setCallback(callback_pingpong);
           display_menu = false; 
         }
         break;
@@ -454,8 +461,9 @@ void displayMenu_Cover()  {
         if (enter == LOW) {
           game_id = 4;       
           setup_wifi();
-          client.setServer(mqtt_server, 1883);
-          client.setCallback(callback_tictactoe);
+          client.connect(server, 80);          
+//          client.setServer(mqtt_server, 1883);
+//          client.setCallback(callback_tictactoe);
           display_menu = false; 
         }
         break;
@@ -516,20 +524,63 @@ void play_PingPong_Single()  {
 
 void play_PingPong_Multi()  { 
 
-  if (!client.connected()) {reconnect_pingpong();}
-  if(!client.loop())
-    client.connect("ESP8266_2");
+//  if (!client.connected()) {reconnect_pingpong();}
+//  if(!client.loop())
+//    client.connect("ESP8266_2");
 
   //This If-Statement make sure that the player's signal ready-to-play is published for once.
-  static char p2_ready[5];
-  counter = counter + 1;
-  Serial.println("counter: ");Serial.print(counter);
-  
-  if (counter < 15)  {
-    dtostrf(loading_pingpong, 1, 1, p2_ready);
-    client.publish("pingpong/p2_ready/out", p2_ready);
+  counter = counter + 1;  
+  String p2_readyStr;
+  int p2_ready = 1;
+    
+  p2_readyStr = String(p2_ready);
+//  static char p2_ready[5];
+//    dtostrf(loading_pingpong, 1, 1, p2_ready);
+//    client.publish("pingpong/p2_ready/out", p2_ready);
+  if (counter < 15){
+//  http.begin("http://192.168.0.36:1880/pingpong/p2/post/signal");
+  http.begin("http://192.168.43.170:1880/pingpong/p2/post/signal");
+//  http.begin("http://192.168.0.4:1880/pingpong/p2/post/signal");
+  http.addHeader("Content-Type", "text/plain");
+    
+  int p2_sendReady = http.POST(p2_readyStr);
+  String p2_payloadready = http.getString();
+  Serial.println("string payload: " + p2_payloadready);
+  http.end();
   }
-  
+  //////////////////////PINGPONG GET HTTP REQUEST///////////////////////
+  if (p1_ready == 0){
+//    http.begin("http://192.168.0.36:1880/pingpong/p1/get/signal");
+    http.begin("http://192.168.43.170:1880/pingpong/p1/get/signal");
+//    http.begin("http://192.168.0.4:1880/pingpong/p1/get/signal");
+    
+    int p1_signalGet = http.GET();
+    String p1_payloadSignal = http.getString();
+    p1_ready = p1_payloadSignal.toInt();
+    http.end();
+  }
+
+////////////////////////////////////////////////////////////////////////
+//    http.begin("http://192.168.0.36:1880/pingpong/p1/get/score");
+    http.begin("http://192.168.43.170:1880/pingpong/p1/get/score");
+//    http.begin("http://192.168.0.4:1880/pingpong/p1/get/score");
+    
+    int p1_scoreGet = http.GET();
+    String p1_payloadScore = http.getString();
+    playerOne_Score = p1_payloadScore.toInt();
+    http.end();  
+////////////////////////////////////////////////////////////////////////
+//    http.begin("http://192.168.0.36:1880/pingpong/p2/get/score");
+    http.begin("http://192.168.43.170:1880/pingpong/p2/get/score");
+//    http.begin("http://192.168.0.4:1880/pingpong/p2/get/score");
+    
+    int p2_ScoreGet = http.GET();
+    String p2_payloadScore = http.getString();
+    playerTwo_Score = p2_payloadScore.toInt();
+    http.end();  
+
+
+
   display.clearDisplay();
   if (playerTwo_Score == 5 || playerOne_Score == 5) {
     inProgress = false;
@@ -554,26 +605,70 @@ void play_PingPong_Multi()  {
 //      Serial.print("ball_coorX : ");  Serial.println(ball_coorX);
 //      Serial.print("ball_coorY : ");  Serial.println(ball_coorY);
 //      Serial.println("");
-
+//
       buttonController_PingPong();
 
-      static char p2_position[3];
-      dtostrf(playerTwo_Position, 1, 1, p2_position);
-      client.publish("pingpong/p2_position/out", p2_position);
+//      static char p2_position[3];
+//      dtostrf(playerTwo_Position, 1, 1, p2_position);
+//      client.publish("pingpong/p2_position/out", p2_position);
+
       
       drawBall(ball_coorX, ball_coorY);
+////////////////////////////////////////////////////////////////////////
+//    http.begin("http://192.168.0.36:1880/pingpong/ball/get/coor_x");
+    http.begin("http://192.168.43.170:1880/pingpong/ball/get/coor_x");
+//    http.begin("http://192.168.0.4:1880/pingpong/ball/get/coor_x");
+    
+    int ball_coorXGet = http.GET();
+    String ball_payloadcoorX = http.getString();
+    ball_coorX = ball_payloadcoorX.toInt();
+    http.end();  
+////////////////////////////////////////////////////////////////////////
+//    http.begin("http://192.168.0.36:1880/pingpong/ball/get/coor_y");
+    http.begin("http://192.168.43.170:1880/pingpong/ball/get/coor_y");
+//    http.begin("http://192.168.0.4:1880/pingpong/ball/get/coor_y");
+    
+    int ball_coorYGet = http.GET();
+    String ball_payloadcoorY = http.getString();
+    ball_coorY = ball_payloadcoorY.toInt();
+    http.end();  
+///////////////////////////////////////////////////////////////////////
       drawPlayerOnePaddle(playerOne_Position);
-      drawPlayerTwoPaddle(playerTwo_Position); 
+      drawPlayerTwoPaddle(playerTwo_Position);
+////////////////////////////////////////////////////////////////////////
+//    http.begin("http://192.168.0.36:1880/pingpong/p1/get/position");
+      http.begin("http://192.168.43.170:1880/pingpong/p1/get/position");
+//      http.begin("http://192.168.0.4:1880/pingpong/p1/get/position");
+    
+    int p1_positionGet = http.GET();
+    String p1_payloadPosition = http.getString();
+    playerOne_Position = p1_payloadPosition.toInt();
+    http.end();  
+//////////////////////////////////////////////////////////////////////////
       drawNet();
       drawScore();
-      
+//////////////////////////////////////////////////////////////////////////
+        String postp2_position;
+        
+        postp2_position = String(playerTwo_Position);
+        
+//        http.begin("http://192.168.0.36:1880/pingpong/p2/post/position");
+        http.begin("http://192.168.43.170:1880/pingpong/p2/post/position");
+//        http.begin("http://192.168.0.4:1880/pingpong/p2/post/position");
+
+        http.addHeader("Content-Type", "text/plain");
+        
+        int p2_sendPosition = http.POST(postp2_position);
+        String p2_payloadPosition = http.getString();
+        http.end();
+//////////////////////////////////////////////////////////////////////////
     } else { // somebody has won
       gameResult_PingPong();
       display.clearDisplay();
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.setCursor(14, 28);
-      display.println("bit.ly/feedback_qoe");
+      display.println("gg.gg/http_qoe");
     
       display.display();
       delay(60000);
@@ -784,24 +879,80 @@ void play_TicTacToe_Single() {
 
 void play_TicTacToe_Multi() {
 
-  if (!client.connected()) {reconnect_tictactoe();}
-  if(!client.loop())
-    client.connect("ESP8266_2");
+//  if (!client.connected()) {reconnect_tictactoe();}
+//  if(!client.loop())
+//    client.connect("ESP8266_2");
 
   //This If-Statement make sure that the player's signal ready-to-play is published for once.
-  static char O_ready[3];
+  String O_readyStr;
+  int O_ready = 1;
+    
+  O_readyStr = String(O_ready);
+//  static char O_ready[3];
   ticktock = ticktock + 1;
   
   if (ticktock < 15) {
-    dtostrf(loading_tictactoe, 1, 1, O_ready);
-    client.publish("tictactoe/O_ready/out", O_ready);
+//    dtostrf(loading_tictactoe, 1, 1, O_ready);
+//    client.publish("tictactoe/O_ready/out", O_ready);
+//    http.begin("http://192.168.0.36:1880/tictactoe/player_o/post/signal");
+    http.begin("http://192.168.43.170:1880/tictactoe/player_o/post/signal");
+//    http.begin("http://192.168.0.4:1880/tictactoe/player_o/post/signal");
+    http.addHeader("Content-Type", "text/plain");
+
+    int O_sendReady = http.POST(O_readyStr);
+    String O_payloadready = http.getString();
+    Serial.println("string payload ready: " + O_payloadready);
+    http.end(); 
   }
   
+////////////////////////////////////////////////////////////////////////
+//  http.begin("http://192.168.0.36:1880/tictactoe/player_x/get/signal");
+  http.begin("http://192.168.43.170:1880/tictactoe/player_x/get/signal");
+//  http.begin("http://192.168.0.4:1880/tictactoe/player_x/get/signal");
+
+  
+  int pX_signalGet = http.GET();
+  String pX_payloadSignal = http.getString();
+  X_ready = pX_payloadSignal.toInt();
+  http.end();
+////////////////////////////////////////////////////////////////////////
+/////////////////////TICTACTOE GET HTTP REQUEST///////////////////////
+//  http.begin("http://192.168.0.36:1880/tictactoe/player_x/get/turn");
+  http.begin("http://192.168.43.170:1880/tictactoe/player_x/get/turn");
+//  http.begin("http://192.168.0.4:1880/tictactoe/player_x/get/turn");
+
+  
+  int pX_turnGet = http.GET();
+  String pX_payloadTurn = http.getString();
+  X_turn = pX_payloadTurn.toInt();
+  http.end();
+////////////////////////////////////////////////////////////////////////
+//  http.begin("http://192.168.0.36:1880/tictactoe/player_x/get/row");
+  http.begin("http://192.168.43.170:1880/tictactoe/player_x/get/row");
+//  http.begin("http://192.168.0.4:1880/tictactoe/player_x/get/row");
+
+  
+  int pX_rowGet = http.GET();
+  String pX_payloadRow = http.getString();
+  X_row = pX_payloadRow.toInt();
+  http.end();
+////////////////////////////////////////////////////////////////////////
+//  http.begin("http://192.168.0.36:1880/tictactoe/player_x/get/column");
+  http.begin("http://192.168.43.170:1880/tictactoe/player_x/get/column");
+//  http.begin("http://192.168.0.4:1880/tictactoe/player_x/get/column");
+
+  int pX_columnGet = http.GET();
+  String pX_payloadColumn = http.getString();
+  X_column = pX_payloadColumn.toInt();
+  http.end();
+////////////////////////////////////////////////////////////////////////
+
   display.clearDisplay();
   if((scoreX == 5) || (scoreO == 5))  {continueGame = false;}
 
   if(X_ready == 1)  {
     if(continueGame == true)  {
+
       drawGame();
       buttonController_TicTacToe();
       assignElements_multi();
@@ -814,7 +965,7 @@ void play_TicTacToe_Multi() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.setCursor(0, 28);
-      display.println("bit.ly/feedback_qoe");
+      display.println("gg.gg/http_qoe");
       display.display();
       delay(60000);
     }
@@ -966,24 +1117,77 @@ void assignElements_multi() {
             O_row = i;
             O_column = j;
             O_turn = 1;
+///////////////////////////////////////////////////////////////////////////////  
+//            static char Orow[1];
+//            dtostrf(O_row, 0, 0, Orow);
+//            client.publish("tictactoe/O_row/out", Orow);
+            String O_rowStr;
+            O_rowStr = String(O_row);
             
-            static char Orow[1];
-            dtostrf(O_row, 0, 0, Orow);
-            client.publish("tictactoe/O_row/out", Orow);
+//            http.begin("http://192.168.0.36:1880/tictactoe/player_o/post/row");
+            http.begin("http://192.168.43.170:1880/tictactoe/player_o/post/row");
+//            http.begin("http://192.168.0.4:1880/tictactoe/player_o/post/row");
 
-            static char Ocolumn[1];
-            dtostrf(O_column, 0, 0, Ocolumn);
-            client.publish("tictactoe/O_column/out", Ocolumn);
+            http.addHeader("Content-Type", "text/plain");
+            
+            int O_sendRow = http.POST(O_rowStr);
+            String O_payloadRow = http.getString();
+            Serial.println("string payload row: " + O_payloadRow);
+            http.end();   
+////////////////////////////////////////////////////////////////////////////////
+//            static char Ocolumn[1];
+//            dtostrf(O_column, 0, 0, Ocolumn);
+//            client.publish("tictactoe/O_column/out", Ocolumn);
+            String O_columnStr;
+            
+            O_columnStr = String(O_column);
+                        
+//            http.begin("http://192.168.0.36:1880/tictactoe/player_o/post/column");
+            http.begin("http://192.168.43.170:1880/tictactoe/player_o/post/column");
+//            http.begin("http://192.168.0.4:1880/tictactoe/player_o/post/column");
 
-            static char Oturn[1];
-            dtostrf(O_turn, 0, 0, Oturn);
-            client.publish("tictactoe/O_turn/out", Oturn);
+            http.addHeader("Content-Type", "text/plain");
+            
+            int O_sendColumn = http.POST(O_columnStr);
+            String O_payloadColumn = http.getString();
+            Serial.println("string payload column: " + O_payloadColumn);
+            http.end();  
+///////////////////////////////////////////////////////////////////////////////
+//            static char Oturn[1];
+//            dtostrf(O_turn, 0, 0, Oturn);
+//            client.publish("tictactoe/O_turn/out", Oturn);
+            String O_turnStr;
 
-            delay(10);
+            O_turnStr = String(O_turn);
+
+//            http.begin("http://192.168.0.36:1880/tictactoe/player_o/post/turn");
+            http.begin("http://192.168.43.170:1880/tictactoe/player_o/post/turn");
+//            http.begin("http://192.168.0.4:1880/tictactoe/player_o/post/turn");
+
+            http.addHeader("Content-Type", "text/plain");
+            
+            int O_sendTurn = http.POST(O_turnStr);
+            String O_payloadTurn = http.getString();
+            Serial.println("string payload: " + O_payloadTurn);
+            http.end();  
+///////////////////////////////////////////////////////////////////////////////
+            delay(1300);
             O_turn = 0;
-            dtostrf(O_turn, 0, 0, Oturn);
-            client.publish("tictactoe/O_turn/out", Oturn);
-             
+//            dtostrf(O_turn, 0, 0, Oturn);
+//            client.publish("tictactoe/O_turn/out", Oturn);
+            O_turnStr = String(O_turn);
+
+//            http.begin("http://192.168.0.36:1880/tictactoe/player_o/post/turn");
+            http.begin("http://192.168.43.170:1880/tictactoe/player_o/post/turn");
+//            http.begin("http://192.168.0.4:1880/tictactoe/player_o/post/turn");
+
+            http.addHeader("Content-Type", "text/plain");
+            
+            O_sendTurn = http.POST(O_turnStr);
+            O_payloadTurn = http.getString();
+            Serial.println("string payload: " + O_payloadTurn);
+            http.end(); 
+///////////////////////////////////////////////////////////////////////////////
             playerSwitch();
           }
         }
